@@ -1,0 +1,11 @@
+{
+
+    "active_recon":{
+        "find_files": {
+            "extensions": [".html", ".js", ".txt", ".xml", 
+                          ".json", ".bak", ".old", ".zip", ".tar", ".gz", ".sql",
+                          ".log", ".conf", ".config", ".db"]
+        }
+    }
+
+}
