@@ -18,6 +18,18 @@
         "directories": {
             "engine": "ffuf",
             "binary": null,
+            "autocalibrate": true,
+            "extra_args": []
+        },
+        "files": {
+            "binary": null,
+            "autocalibrate": true,
+            "extra_args": []
+        },
+        "params": {
+            "binary": null,
+            "autocalibrate": true,
+            "value": "1",
             "extra_args": []
         }
     },

@@ -23,9 +23,21 @@ DEFAULT_CONFIG = {
     "tools": {
         # Зовнішні утиліти, якими оркеструємо кожен модуль.
         "directories": {
-            "engine": "ffuf",     # "ffuf" | "gobuster"
-            "binary": None,       # None => береться назва рушія з PATH
-            "extra_args": []      # довільні додаткові прапорці утиліти
+            "engine": "ffuf",       # "ffuf" | "gobuster"
+            "binary": None,         # None => береться назва рушія з PATH
+            "autocalibrate": True,  # ffuf -ac (авто-фільтрація), лише для ffuf
+            "extra_args": []        # довільні додаткові прапорці утиліти
+        },
+        "files": {                  # пошук файлів/бекапів (ffuf + розширення)
+            "binary": None,
+            "autocalibrate": True,
+            "extra_args": []
+        },
+        "params": {                 # перебір GET-параметрів (ffuf ?FUZZ=value)
+            "binary": None,
+            "autocalibrate": True,
+            "value": "1",           # значення параметра у запиті ?FUZZ=<value>
+            "extra_args": []
         }
     },
     "active_recon": {

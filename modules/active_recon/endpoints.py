@@ -1,79 +1,24 @@
 import os
 import re
 import sys
-import json
 import shutil
 import subprocess
-from tempfile import NamedTemporaryFile
 
 # Дозволяємо імпорт спільних хелперів із core/ незалежно від точки запуску.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "core"))
-from utils import make_result, passes_filters, save_state
+from utils import ffuf_scan, collect_results, save_state, read_words
 
 MODULE_NAME = "directories"
 
 
-def _run(cmd, verbose, capture=False):
-    """Запускає зовнішню утиліту. Повертає stdout (capture) або bool успіху."""
-    if verbose:
-        print("[*] " + " ".join(cmd))
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-    except FileNotFoundError:
-        print(f"[-] Failed to launch: {cmd[0]}")
-        return None if capture else False
-    if proc.returncode != 0 and verbose and proc.stderr:
-        print(proc.stderr.strip())
-    return proc.stdout if capture else True
-
-
 class FfufEngine:
-    """Рушій на базі ffuf: вивід у JSON, парситься з масиву results."""
+    """Рушій на базі ffuf: FUZZ підставляється у шлях цілі."""
 
     @staticmethod
-    def run(binary, target, wordlist, config, tool_cfg, verbose):
-        http = config["http"]
-        out = NamedTemporaryFile(prefix="ffuf_", suffix=".json", delete=False)
-        out.close()
-
-        cmd = [
-            binary,
-            "-u", f"{target}/FUZZ",
-            "-w", wordlist,
-            "-t", str(http["threads"]),
-            "-timeout", str(http["timeout"]),
-            "-of", "json", "-o", out.name,
-            "-s",
-        ]
-        for name, value in http.get("headers", {}).items():
-            cmd += ["-H", f"{name}: {value}"]
-        exclude = config["filters"].get("status_exclude", [])
-        if exclude:
-            cmd += ["-fc", ",".join(str(code) for code in exclude)]
-        cmd += tool_cfg.get("extra_args", [])
-
-        _run(cmd, verbose)
-        try:
-            with open(out.name) as report:
-                data = report.read()
-        except FileNotFoundError:
-            data = ""
-        finally:
-            if os.path.exists(out.name):
-                os.unlink(out.name)
-        return data
-
-    @staticmethod
-    def parse(raw):
-        data = json.loads(raw) if raw.strip() else {}
-        return [
-            {
-                "path": item.get("input", {}).get("FUZZ", item.get("url", "")),
-                "status": item.get("status", 0),
-                "length": item.get("length", 0),
-            }
-            for item in data.get("results", [])
-        ]
+    def scan(binary, target, wordlist, config, tool_cfg, verbose):
+        words = set(read_words(wordlist))
+        return ffuf_scan(binary, f"{target}/FUZZ", wordlist, config, tool_cfg, verbose,
+                         keep=lambda fuzz: fuzz in words)
 
 
 class GobusterEngine:
@@ -81,8 +26,8 @@ class GobusterEngine:
 
     LINE = re.compile(r"^(\S+)\s+\(Status:\s*(\d+)\)\s+\[Size:\s*(\d+)\]")
 
-    @staticmethod
-    def run(binary, target, wordlist, config, tool_cfg, verbose):
+    @classmethod
+    def scan(cls, binary, target, wordlist, config, tool_cfg, verbose):
         http = config["http"]
         cmd = [
             binary, "dir",
@@ -95,10 +40,18 @@ class GobusterEngine:
         for name, value in http.get("headers", {}).items():
             cmd += ["-H", f"{name}: {value}"]
         cmd += tool_cfg.get("extra_args", [])
-        return _run(cmd, verbose, capture=True) or ""
+
+        if verbose:
+            print("[*] " + " ".join(cmd))
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+        except FileNotFoundError:
+            print(f"[-] Failed to launch: {binary}")
+            return []
+        return cls._parse(proc.stdout)
 
     @classmethod
-    def parse(cls, raw):
+    def _parse(cls, raw):
         hits = []
         for line in raw.splitlines():
             match = cls.LINE.match(line.strip())
@@ -141,15 +94,8 @@ def find_directories(target, project_name, wordlist_path, config, verbose=False)
         return []
 
     print(f"[*] Directory bruteforce via {engine_name} on {target}")
-    raw_output = engine.run(binary, target, wordlist_path, config, tool_cfg, verbose)
-
-    results = []
-    for hit in engine.parse(raw_output):
-        if not passes_filters(hit["status"], hit["length"], config["filters"]):
-            continue
-        if verbose:
-            print(f"[+] {hit['status']}  {hit['length']:>7}  {target}/{hit['path']}")
-        results.append(make_result(target, MODULE_NAME, hit["path"], hit["status"], hit["length"]))
+    hits = engine.scan(binary, target, wordlist_path, config, tool_cfg, verbose)
+    results = collect_results(target, MODULE_NAME, hits, config["filters"], verbose)
 
     save_state(project_name, MODULE_NAME, target, results)
     print(f"[+] Directory bruteforce ({engine_name}) done: {len(results)} hits saved.")
