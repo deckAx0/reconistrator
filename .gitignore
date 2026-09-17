@@ -1,2 +1,6 @@
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+
+# Локальний контекст Claude
 CLAUDE.md
