@@ -44,7 +44,6 @@ if __name__ == "__main__":
     target = normalize_url(args.target)
     wordlist = config["wordlist"]
 
-    # Фічі 1–3: обрані модулі розвідки → JSON-стан проєкту.
     if "directories" in args.modules:
         find_directories(target, args.project_name, wordlist["endpoints"], config, args.verbose)
     if "files" in args.modules:
@@ -53,5 +52,4 @@ if __name__ == "__main__":
     if "params" in args.modules:
         find_params(target, args.project_name, wordlist["parameters"], config, args.verbose)
 
-    # Фіча 4: зведений звіт із JSON-стану у .md.
     generate_report(args.project_name, target, args.report_format)

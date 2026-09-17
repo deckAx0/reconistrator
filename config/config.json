@@ -6,7 +6,7 @@
         "allow_redirects": false,
         "verify_ssl": false,
         "headers": {
-            "User-Agent": "Reconistrator/0.1 (authorized recon)"
+            "User-Agent": "Reconistrator"
         }
     },
     "filters": {

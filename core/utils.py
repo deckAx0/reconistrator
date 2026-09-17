@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 
 def normalize_url(target):
-    """Приводить ціль до вигляду scheme://host без завершального '/'."""
     target = target.strip()
     if not target.startswith(("http://", "https://")):
         target = "http://" + target

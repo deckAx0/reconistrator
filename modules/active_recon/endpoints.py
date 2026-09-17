@@ -6,7 +6,7 @@ import subprocess
 
 # Дозволяємо імпорт спільних хелперів із core/ незалежно від точки запуску.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "core"))
-from utils import ffuf_scan, collect_results, save_state, read_words
+from core.utils import ffuf_scan, collect_results, save_state, read_words
 
 MODULE_NAME = "directories"
 
