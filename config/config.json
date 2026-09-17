@@ -1,11 +1,29 @@
 {
-
-    "active_recon":{
+    "http": {
+        "threads": 20,
+        "timeout": 10,
+        "retries": 2,
+        "allow_redirects": false,
+        "verify_ssl": false,
+        "headers": {
+            "User-Agent": "Reconistrator/0.1 (authorized recon)"
+        }
+    },
+    "filters": {
+        "status_include": [],
+        "status_exclude": [404],
+        "hide_lengths": []
+    },
+    "active_recon": {
         "find_files": {
-            "extensions": [".html", ".js", ".txt", ".xml", 
+            "extensions": [".html", ".js", ".txt", ".xml",
                           ".json", ".bak", ".old", ".zip", ".tar", ".gz", ".sql",
                           ".log", ".conf", ".config", ".db"]
         }
+    },
+    "wordlist": {
+        "endpoints": "../data/wordlists/directory_list.txt",
+        "parameters": "../data/wordlists/burp-parameter-names.txt",
+        "files": "../data/wordlists/directory_list.txt"
     }
-
 }
