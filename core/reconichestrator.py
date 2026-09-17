@@ -10,6 +10,8 @@ from create_project import create_project
 from config import load_config
 from utils import normalize_url
 from modules.active_recon.endpoints import find_directories
+from modules.active_recon.files import find_files
+from modules.active_recon.params import find_params
 from reporting.report import generate_report
 
 
@@ -20,6 +22,9 @@ if __name__ == "__main__":
     parser.add_argument("--target", required=True, help="Target domain or IP address for reconnaissance")
     parser.add_argument("--project-name", required=True, help="Name of the project for organizing output")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("--modules", nargs="+", choices=["directories", "files", "params"],
+                        default=["directories", "files", "params"],
+                        help="Which recon modules to run (default: all)")
     parser.add_argument("--report-format", choices=["md", "html"], default="md", help="Format of the output report (default: md)")
     parser.add_argument("--config", default=DEFAULT_CONFIG_PATH + "config.json", help="Path to the configuration file (default: " + DEFAULT_CONFIG_PATH + "config.json)")
 
@@ -37,10 +42,16 @@ if __name__ == "__main__":
     print(f"[+] Configuration loaded successfully from '{args.config}'")
 
     target = normalize_url(args.target)
-    endpoints_wordlist = config["wordlist"]["endpoints"]
+    wordlist = config["wordlist"]
 
-    # Фіча 1: brute force директорій → JSON-стан проєкту.
-    find_directories(target, args.project_name, endpoints_wordlist, config, args.verbose)
+    # Фічі 1–3: обрані модулі розвідки → JSON-стан проєкту.
+    if "directories" in args.modules:
+        find_directories(target, args.project_name, wordlist["endpoints"], config, args.verbose)
+    if "files" in args.modules:
+        extensions = config["active_recon"]["find_files"]["extensions"]
+        find_files(target, args.project_name, wordlist["files"], extensions, config, args.verbose)
+    if "params" in args.modules:
+        find_params(target, args.project_name, wordlist["parameters"], config, args.verbose)
 
-    # Фіча 4: звіт із JSON-стану у .md.
+    # Фіча 4: зведений звіт із JSON-стану у .md.
     generate_report(args.project_name, target, args.report_format)
