@@ -20,18 +20,27 @@ python reconichestrator.py --target example.com --project-name myscan
 - `--project-name` — назва проєкту; результати йдуть у `projects/<name>/`.
 - `--config` — шлях до конфігу (дефолт `../config/config.json`).
 - `--report-format` — `md` (дефолт) або `html` (`html` поки що TODO → пише `.md`).
-- `--verbose` — друкувати кожну знахідку.
+- `--verbose` — друкувати команду утиліти та кожну знахідку.
 
-Залежності: `requests`.
+Залежності: сам оркестратор — лише стандартна бібліотека Python; brute force
+директорій вимагає встановленого **ffuf** або **gobuster** у `PATH`.
 
 ## Реалізовані модулі
 
 ### 1. Bruteforce директорій — `modules/active_recon/endpoints.py`
-`find_directories()` перебирає шляхи зі словника (`wordlist.endpoints`),
-застосовує фільтри статус-кодів/розмірів і зберігає знахідки у
-`projects/<name>/state/directories.json` в єдиному форматі результату
-(`target`, `module`, `path`, `status_code`, `length`, `timestamp`).
-Потоки/таймаути/ретраї/заголовки — з `config.json`.
+Це **оркестратор**, а не власний сканер: `find_directories()` будує команду
+для зовнішньої утиліти (`ffuf` або `gobuster`) за параметрами з `config.json`,
+запускає її, нормалізує вивід у єдиний формат
+(`target`, `module`, `path`, `status_code`, `length`, `timestamp`) і зберігає у
+`projects/<name>/state/directories.json`.
+
+- **ffuf** — вивід у JSON (`-of json`), парситься масив `results`.
+- **gobuster** — текстовий вивід парситься регуляркою.
+
+Рушій обирається в `config.json` (`tools.directories.engine`). Потоки, таймаут
+і заголовки передаються утиліті; фільтри статус-кодів/розмірів застосовуються
+до її виводу однаково для будь-якого рушія. Новий рушій додається одним записом
+у реєстр `ENGINES`.
 
 ### 4. Звіти — `reporting/report.py`
 `generate_report()` збирає всі JSON-снепшоти з `state/` і рендерить зведений
@@ -43,11 +52,13 @@ python reconichestrator.py --target example.com --project-name myscan
 
 - `http` — `threads`, `timeout`, `retries`, `allow_redirects`, `verify_ssl`, `headers`.
 - `filters` — `status_include`, `status_exclude`, `hide_lengths`.
+- `tools.directories` — `engine` (`ffuf`/`gobuster`), `binary` (шлях до
+  виконуваного файлу або `null`), `extra_args` (довільні прапорці утиліти).
 - `wordlist` — шляхи до словників (`endpoints`, `parameters`, `files`).
 - `active_recon.find_files.extensions` — розширення для модуля файлів.
 
-Спільні хелпери (HTTP-сесія, формат результату, фільтри, читання/запис стану)
-живуть у `core/utils.py`.
+Спільні хелпери (нормалізація URL, формат результату, фільтри, читання/запис
+стану) живуть у `core/utils.py`.
 
 ## Обмеження / TODO
 

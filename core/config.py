@@ -20,6 +20,14 @@ DEFAULT_CONFIG = {
         "status_exclude": [404],
         "hide_lengths": []
     },
+    "tools": {
+        # Зовнішні утиліти, якими оркеструємо кожен модуль.
+        "directories": {
+            "engine": "ffuf",     # "ffuf" | "gobuster"
+            "binary": None,       # None => береться назва рушія з PATH
+            "extra_args": []      # довільні додаткові прапорці утиліти
+        }
+    },
     "active_recon": {
         "find_files": {
             "extensions": [".bak", ".old", ".zip"]

@@ -14,6 +14,13 @@
         "status_exclude": [404],
         "hide_lengths": []
     },
+    "tools": {
+        "directories": {
+            "engine": "ffuf",
+            "binary": null,
+            "extra_args": []
+        }
+    },
     "active_recon": {
         "find_files": {
             "extensions": [".html", ".js", ".txt", ".xml",

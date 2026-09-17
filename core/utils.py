@@ -2,10 +2,6 @@ import os
 import json
 from datetime import datetime, timezone
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
 
 def normalize_url(target):
     """Приводить ціль до вигляду scheme://host без завершального '/'."""
@@ -13,22 +9,6 @@ def normalize_url(target):
     if not target.startswith(("http://", "https://")):
         target = "http://" + target
     return target.rstrip("/")
-
-
-def build_session(http_cfg):
-    """Створює requests.Session із заголовками та ретраями з config.json."""
-    session = requests.Session()
-    session.headers.update(http_cfg.get("headers", {}))
-
-    retries = Retry(
-        total=http_cfg.get("retries", 2),
-        backoff_factor=0.3,
-        status_forcelist=(500, 502, 503, 504),
-    )
-    adapter = HTTPAdapter(max_retries=retries)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
 
 
 def make_result(target, module, path, status_code, length):
@@ -44,7 +24,11 @@ def make_result(target, module, path, status_code, length):
 
 
 def passes_filters(status_code, length, filters):
-    """Вирішує, чи потрапляє відповідь у результати за фільтрами config.json."""
+    """Вирішує, чи потрапляє знахідка у результати за фільтрами config.json.
+
+    Застосовується до виводу будь-якого рушія, щоб поведінка фільтрів була
+    однаковою незалежно від обраної утиліти.
+    """
     include = filters.get("status_include", [])
     exclude = filters.get("status_exclude", [])
     hide_lengths = filters.get("hide_lengths", [])
